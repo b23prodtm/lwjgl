@@ -397,9 +397,10 @@ final class WindowsDisplay implements DisplayImplementation {
 
 	private void clearAWTFocus() {
 		// This is needed so that the last focused component AWT remembers is NOT our Canvas
-		WindowsDisplay.this.parent.setFocusable(false);
-		WindowsDisplay.this.parent.setFocusable(true);
-
+		if(WindowsDisplay.this.parent != null){
+                        WindowsDisplay.this.parent.setFocusable(false);
+                        WindowsDisplay.this.parent.setFocusable(true);
+                }
 		// Clear AWT focus owner
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
 	}
