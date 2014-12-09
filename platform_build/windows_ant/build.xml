@@ -3,12 +3,20 @@
 <project name="lwjgl native code, native code" basedir="../../bin/lwjgl" default="compile">
 	<property name="native" location="../../src/native"/>
 	<property environment="env"/>
+	<!-- 
+	@SETX MSSDK "C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A"
+	@rem send -Denv.MSSDK from ant launcher if environment is not accessible
+	@SETX VCSDK "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC"
+	@rem send -Denv.VCSDK from ant launcher if environment is not accessible
+	-->
 	<property name="sdkhome" location="${env.MSSDK}"/>
+	<property name="vcsdkhome" location="${env.VCSDK}"/>
 
 	<target name="compile_dir">
-		<apply dir="." failonerror="true" executable="cl" dest="." skipemptyfilesets="true" parallel="true">
+		<apply dir="." failonerror="true" executable="${vcsdkhomebin}\cl" dest="." skipemptyfilesets="true" parallel="true">
 			<arg line="/c /W2 /EHsc /Ox /Gy /MT /MP /nologo"/>
 			<arg value="/I${sdkhome}\include"/>
+			<arg value="/I${vcsdkhome}\include"/>
 			<arg value="/I${java.home}\..\include"/>
 			<arg value="/I${java.home}\..\include\win32"/>
 			<arg value="/I${native}\common"/>
@@ -28,15 +36,17 @@
 	</target>
 
 	<target name="link">
-		<apply dir="." parallel="true" executable="cl" failonerror="true">
+		<apply dir="." parallel="true" executable="${vcsdkhomebin}\cl" failonerror="true">
 			<arg line="/LD /nologo"/>
 			<srcfile/>
 			<arg line="/Fe${dllname} /link"/>
 			<arg value="/LIBPATH:${java.home}\..\lib"/>
 			<arg value="/LIBPATH:${sdkhomelib}"/>
-			<arg value="/OPT:REF"/>
-			<arg value="/OPT:ICF"/>
-			<arg line="/DLL /DELAYLOAD:jawt.dll ${libs}"/>
+			<arg value="/LIBPATH:${vcsdkhomelib}"/>
+			<arg value="/LIBPATH:..\..\libs\windows"/>
+			<arg value="/OPT:REF,ICF"/>
+			<arg line="/DLL ${libs} /DELAYLOAD:jawt.dll"/>
+			<arg line="${compilemachine}"/>
 			<fileset dir="." includes="*.obj"/>
 		</apply>
 	</target>
@@ -49,16 +59,24 @@
 			<fileset dir="." includes="*.lib"/>
 		</delete>
 	</target>
-
 	<target name="compile">
-		<condition property="sdkhomelib" value="${sdkhome}\lib" else="${sdkhome}\lib\x64">
+		<condition property="sdkhomelib" value="${sdkhome}\Lib" else="${sdkhome}\Lib\x64">
+			<equals arg1="${os.arch}" arg2="x86"/>
+		</condition>
+		<condition property="vcsdkhomelib" value="${vcsdkhome}\Lib" else="${vcsdkhome}\Lib\amd64">
+			<equals arg1="${os.arch}" arg2="x86"/>
+		</condition>
+		<condition property="vcsdkhomebin" value="${vcsdkhome}\bin" else="${vcsdkhome}\bin\amd64">
 			<equals arg1="${os.arch}" arg2="x86"/>
 		</condition>
 		<condition property="dllname" value="lwjgl.dll" else="lwjgl64.dll">
 			<equals arg1="${os.arch}" arg2="x86"/>
 		</condition>
-		<echo message="${sdkhomelib}"/>
-		<property name="libs" value="Kernel32.lib ole32.lib OpenGL32.Lib Version.lib user32.lib Gdi32.lib Advapi32.lib jawt.lib delayimp.lib winmm.lib Comctl32.lib"/>
+		<condition property="compilemachine" value="/MACHINE:X86" else="/MACHINE:X64">
+			<equals arg1="${os.arch}" arg2="x86"/>
+		</condition>
+		<echo message="${sdkhomelib}; ${vcsdkhomelib}; ${vcsdkhomebin}"/>
+		<property name="libs" value="Kernel32.lib ole32.lib OpenGL32.Lib Version.lib User32.lib Gdi32.lib Advapi32.lib jawt.lib delayimp.lib winmm.lib Comctl32.lib"/>
 		<antcall target="compile_dir"/>
 		<antcall target="link"/>
     </target>
