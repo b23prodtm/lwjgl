@@ -364,7 +364,7 @@ final class WindowsDisplay implements DisplayImplementation {
 	/*
 	 * Called when the application is alt-tabbed to or from
 	 */
-	private void appActivate(boolean active, long millis) {
+	private void appActivate(boolean active) {
 		if (inAppActivate) {
 			return;
 		}
@@ -396,9 +396,10 @@ final class WindowsDisplay implements DisplayImplementation {
 
 	private void clearAWTFocus() {
 		// This is needed so that the last focused component AWT remembers is NOT our Canvas
-		WindowsDisplay.this.parent.setFocusable(false);
-		WindowsDisplay.this.parent.setFocusable(true);
-
+		if(WindowsDisplay.this.parent != null){
+                        WindowsDisplay.this.parent.setFocusable(false);
+                        WindowsDisplay.this.parent.setFocusable(true);
+                }
 		// Clear AWT focus owner
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
 	}
@@ -981,10 +982,10 @@ final class WindowsDisplay implements DisplayImplementation {
 				updateWidthAndHeight();
 				break;
 			case WM_KILLFOCUS:
-				appActivate(false, millis);
+				appActivate(false);
 				return 0L;
 			case WM_SETFOCUS:
-				appActivate(true, millis);
+				appActivate(true);
 				return 0L;
 			case WM_MOUSEACTIVATE:
 				if ( parent != null ) {
