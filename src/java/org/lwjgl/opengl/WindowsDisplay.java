@@ -381,7 +381,7 @@ final class WindowsDisplay implements DisplayImplementation {
 				updateClipping();
 		} else {
 			if ( keyboard != null )
-				keyboard.releaseAll(System.currentTimeMillis());
+				keyboard.releaseAll(millis);
 			if ( Display.isFullscreen() ) {
 				showWindow(getHwnd(), SW_SHOWMINNOACTIVE);
 				resetDisplayMode();
