@@ -1,0 +1,3 @@
+﻿general:
+  artifacts:
+    - "libs/linux" # relative to the build directory
