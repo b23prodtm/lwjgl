@@ -71,7 +71,7 @@ abstract class MacOSXCanvasPeerInfo extends MacOSXPeerInfo {
                         // where the older cocoaViewRef NSView method maybe be available.
                         forceCALayer = false;
                 } // fix for CALayer position not covering Canvas due to a Java 7 bug (don't autoresize, use componentlistener)
-                else if (javaVersion.startsWith("1.7")) {
+                else /*if (javaVersion.startsWith("1.7")) */{
                         autoResizable = false;
                 }
 
@@ -87,7 +87,7 @@ abstract class MacOSXCanvasPeerInfo extends MacOSXPeerInfo {
                 // reverse oY
                 window_handle = nInitHandle(awt_surface.lockAndGetHandle(component), getHandle(), window_handle, forceCALayer, autoResizable, rtLoc.x - left, peer.getHeight() - rtLoc.y + top - component.getHeight());
 
-                if (javaVersion.startsWith("1.7")) {
+            if (!(javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6"))){/*javaVersion.startsWith("1.7")) {*/
 			// fix for CALayer position not covering Canvas due to a Java 7 bug
                         // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7172187
                         addComponentListener(component);
