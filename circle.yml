@@ -1,3 +1,5 @@
 ﻿general:
   artifacts:
     - "libs/linux" # relative to the build directory
+.post :
+  - tar zvf ~/artifacts.tar.gz $CIRCLE_ARTIFACTS
