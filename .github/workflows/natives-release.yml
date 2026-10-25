@@ -1,0 +1,98 @@
+name: Natives release
+
+on:
+  push:
+    branches: [jigaxtended]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  natives:
+    name: Natives ${{ matrix.name }} x86_64
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux
+            os: ubuntu-22.04
+          - name: windows
+            os: windows-2022
+          - name: macosx
+            os: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      # javah (used by the ant build) was removed after JDK 8
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          architecture: x64
+
+      - name: Install Linux build dependencies
+        if: matrix.name == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ant gcc make libx11-dev libxcursor-dev libxrandr-dev libxxf86vm-dev libxt-dev libgl1-mesa-dev libglu1-mesa-dev libopenal-dev
+
+      - name: Install Ant (macOS)
+        if: matrix.name == 'macosx'
+        run: brew install ant
+
+      - name: Install Ant (Windows)
+        if: matrix.name == 'windows'
+        run: choco install ant -y --no-progress
+
+      - name: Set up MSVC x64
+        if: matrix.name == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Build Java and natives
+        shell: bash
+        run: |
+          ant generate-all
+          ant compile
+          ant compile_native
+
+      - name: Package natives
+        shell: bash
+        run: |
+          mkdir -p dist
+          cd libs/${{ matrix.name }}
+          files=$(ls *.so *.dll *.dylib *.jnilib 2>/dev/null || true)
+          if [ -z "$files" ]; then echo "No native libraries found"; exit 1; fi
+          if [ "${{ matrix.name }}" = "windows" ]; then
+            7z a ../../dist/lwjgl-natives-windows-x86_64.zip $files
+          else
+            tar -czf ../../dist/lwjgl-natives-${{ matrix.name }}-x86_64.tar.gz $files
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: natives-${{ matrix.name }}-x86_64
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: natives
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: natives-${{ github.run_number }}
+          name: Natives build ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          body: Native libraries (x86_64) for Windows, Linux and macOS built from ${{ github.sha }}.
+          files: dist/*
